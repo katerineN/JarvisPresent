@@ -20,6 +20,7 @@ namespace JarvisPresent
         private List<Point> convexHull;
         private int drawing = 1; //пустой рисунок
         private Point start; //стартовая точка
+        private bool flag = true;
         public Form1()
         {
             InitializeComponent();
@@ -103,6 +104,58 @@ namespace JarvisPresent
             pictureBox1.Image = bitmap;
             pictureBox1.Invalidate();
         }
+        
+        //находит положение точки относительно ребра
+        //передаем список из 2х точек (для ребра) и точку, положение которой ищем 
+        int findPos(Point O, Point a, Point point)
+        {
+
+            //находим условие расположения точки относительно прямой
+            //yb*xa - xb*ya
+            int temp = (point.X - O.X) * (a.Y - O.Y) - (point.Y - O.Y) * (a.X - O.X);
+            return temp;
+        }
+
+        //находим вторую точку!!!
+        Point FindSecond(List<Point> temp)
+        {
+            Point min = temp[0];
+            var minX = pictureBox1.Width;             
+            var minY = pictureBox1.Width;
+            foreach (var t in temp)
+            {
+                flag = true;
+                if (t == start)
+                {
+                    continue;
+                }
+                
+                
+                for (int i = 0; i < temp.Count; i++)
+                {
+                    if (temp[i] == t || temp[i] == start)
+                    {
+                        continue;
+                    }
+
+                    var f = findPos(start, t, temp[i]);
+                    if (f < 0)
+                    {
+                        flag = false;
+                    }
+                }
+
+                var tt = (int)Math.Sqrt(Math.Pow(t.X - start.X, 2) + Math.Pow(t.Y - start.Y, 2));
+                if (flag == true && Math.Abs(start.X-t.X)<minX && tt <minY )
+                {
+                    minX = Math.Abs(start.X - t.X);
+                    minY = tt;
+                    min = t;
+                }
+            }
+
+            return min;
+        }
 
         //поиск точек выпуклоц оболочки
         void FindConvexHull()
@@ -112,20 +165,9 @@ namespace JarvisPresent
 
             Point current = start;
             Point end = start;
-            int minY = pictureBox1.Height, minX = pictureBox1.Width;
-            for (int i = 0; i < temp.Count; i++)
-            {
-                var t = temp[i];
-                if (t.X >= start.X && t.Y >= start.Y &&
-                    Math.Abs(t.X - start.X) < minX && Math.Abs(t.Y - start.Y) < minY && t != start)
-                {
-                    end = t;
-                    minX = Math.Abs(t.X - start.X);
-                    minY = Math.Abs(t.Y - start.Y);
-                }
-            }
-            gr.DrawRectangle(pointPen, current.X, current.Y, 3, 3);
-            gr.DrawRectangle(pointPen, end.X, end.Y, 3, 3);
+            end = FindSecond(temp);
+            gr.DrawRectangle(Pens.Blue, current.X, current.Y, 5, 5);
+            gr.DrawRectangle(Pens.Aqua, end.X, end.Y, 5, 5);
             pictureBox1.Image = bitmap;
             pictureBox1.Invalidate();
             temp.Remove(end);
@@ -173,6 +215,7 @@ namespace JarvisPresent
             if (simple.Count == 0) 
             {
                 MessageBox.Show("Для начала нарисуйте точки", "Ошибка");
+                
             }
             if (drawing == 0) //нарисован примитив
             {
